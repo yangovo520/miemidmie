@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#000000">
+<title>电子木鱼 · 黑白极简</title>
+<style>
+ :root{--bg:#000;--ink:#f5f5f5;--accent:#fff;--card:#111;--muted:#999}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}button,svg,.stage,.wood{outline:none;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}button:focus,button:focus-visible{outline:none;box-shadow:none}body{margin:0;background:#000;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;min-height:100dvh}
+.app{max-width:520px;margin:auto;padding:16px 18px 24px;min-height:100dvh;display:flex;flex-direction:column;align-items:center}
+.top{width:100%;display:flex;justify-content:space-between;align-items:center;min-height:34px}.brand{font-size:12px;letter-spacing:2px;color:#666}.settings-open{border:1px solid #333;background:#0a0a0a;color:#ddd;border-radius:10px;padding:8px 11px;font-size:12px}
+h1{font-size:23px;letter-spacing:4px;margin:13px 0 10px;font-weight:500;color:#ddd}.sub{font-size:13px;color:#999;margin:0 0 22px}
+.stats{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}.stat{background:transparent;border:0;border-radius:0;padding:8px 12px;text-align:center}.stat small{display:block;color:#777;font-size:11px;margin-bottom:5px}.stat strong{font-size:23px;font-weight:650;font-variant-numeric:tabular-nums}
+.stage{position:relative;display:flex;align-items:center;justify-content:center;flex:1;min-height:300px;width:100%;overflow:hidden}
+.ripple{position:absolute;width:220px;height:220px;border-radius:50%;border:1px solid #fff;opacity:0;pointer-events:none}.stage.hit .ripple{animation:ripple .55s ease-out}
+@keyframes ripple{0%{transform:scale(.6);opacity:.45}100%{transform:scale(1.55);opacity:0}}
+.wood{position:relative;width:min(68vw,270px);height:min(68vw,270px);border:0;background:transparent;padding:0;cursor:pointer;touch-action:manipulation;transition:transform .08s;outline:none;filter:none}
+.wood:active,.wood.hit{transform:scale(.94) rotate(-1deg);outline:none;box-shadow:none;-webkit-tap-highlight-color:transparent}
+.wood svg{width:100%;height:100%;overflow:visible}
+.hint{position:absolute;bottom:17px;color:#888;font-size:12px;letter-spacing:1px}
+.float{position:absolute;left:50%;top:24%;transform:translate(-50%,0);font-weight:800;font-size:22px;color:#fff;text-shadow:0 2px 10px #000;pointer-events:none;white-space:nowrap;animation:floatup .9s ease-out forwards}
+@keyframes floatup{0%{opacity:0;transform:translate(-50%,10px) scale(.8)}15%{opacity:1}100%{opacity:0;transform:translate(-50%,-65px) scale(1.1)}}
+.panel{width:100%;background:#101010;border:1px solid #303030;border-radius:18px;padding:17px;box-shadow:none}
+.panel h2{font-size:14px;margin:0 0 13px;letter-spacing:1px;color:#f5f5f5}.field{margin:12px 0}.label{display:block;font-size:12px;color:#aaa;margin-bottom:7px}
+select,input[type=text]{width:100%;height:43px;border:1px solid #3a3a3a;background:#080808;border-radius:12px;padding:0 12px;color:#fff;font-size:14px;outline:none}
+select:focus,input:focus{border-color:#fff}
+.actions{display:flex;gap:8px;margin-top:13px}.btn{border:1px solid #444;background:#171717;color:#eee;border-radius:12px;padding:10px 12px;font-size:13px;flex:1}.btn.primary{background:#fff;color:#000;border-color:#fff}.toggleline{display:flex;align-items:center;justify-content:space-between;font-size:13px;color:#ddd;margin-top:12px}.toggleline input{accent-color:#9e5d39;width:17px;height:17px}
+footer{font-size:10px;color:#444;margin-top:12px;letter-spacing:1px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#f5f5f5;color:#000;padding:10px 15px;border-radius:999px;font-size:12px;opacity:0;transition:opacity .2s;pointer-events:none}.toast.show{opacity:1}
+
+.settings-overlay{position:fixed;inset:0;z-index:20;background:#000b;display:none;align-items:center;justify-content:center;padding:18px}
+.settings-overlay.open{display:flex}
+.settings-overlay .panel{max-width:460px;max-height:85dvh;overflow:auto}
+.panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.panel-head h2{margin:0}
+.close-settings{border:1px solid #333;background:#151515;color:#ddd;border-radius:9px;width:32px;height:32px;font-size:15px}
+
+@media(min-height:800px){.stage{min-height:340px}}
+</style>
+</head>
+<body>
+<main class="app">
+  <div class="top"><button class="settings-open" id="openSettings" aria-label="打开设置">☰ 设置</button><span class="brand">木鱼</span></div>
+  <h1>电子木鱼</h1>
+  <section class="stats">
+    <div class="stat"><small>今日功德</small><strong id="today">0</strong></div>
+    <div class="stat"><small>累计敲击</small><strong id="total">0</strong></div>
+  </section>
+  <section class="stage" id="stage" aria-label="木鱼敲击区域">
+    <div class="ripple"></div>
+    <button class="wood" id="wood" aria-label="敲一下木鱼">
+      <svg viewBox="0 0 260 260" role="img" aria-label="圆润简约白色木鱼">
+        <path d="M43 132
+          C42 91 70 57 108 48
+          C144 39 181 53 205 79
+          C226 102 232 132 217 157
+          C202 183 171 199 135 198
+          C96 197 63 177 49 153
+          C45 146 43 139 43 132Z"
+          fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M57 124
+          C67 88 96 65 128 64
+          C157 63 183 76 199 99
+          C176 89 151 90 129 97
+          C101 106 78 124 59 145Z"
+          fill="#e9e9e9" opacity=".75"/>
+        <ellipse cx="146" cy="124" rx="29" ry="21" transform="rotate(-7 146 124)" fill="#000"/>
+        <ellipse cx="146" cy="124" rx="20" ry="13" transform="rotate(-7 146 124)" fill="#111"/>
+        <path d="M117 122 Q145 108 175 120" fill="none" stroke="#444" stroke-width="2" stroke-linecap="round"/>
+        <path d="M70 89 Q91 67 117 62" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".9"/>
+      </svg>
+    </button>
+    <div class="hint">轻触木鱼 · 积一份好心情</div>
+  </section>
+  <div class="settings-overlay" id="settingsOverlay" aria-hidden="true">
+  <section class="panel" role="dialog" aria-modal="true" aria-label="木鱼设置">
+    <div class="panel-head"><h2>设置</h2><button class="close-settings" id="closeSettings" aria-label="关闭设置">✕</button></div>
+    <div class="field"><label class="label" for="sound">木鱼音效</label>
+      <select id="sound">
+        <option value="classic">经典木鱼（默认）</option>
+        <option value="deep">低沉木鱼</option>
+        <option value="bell">清脆木鱼</option>
+        <option value="soft">柔和木鱼</option>
+        <option value="silent">静音模式</option>
+      </select>
+    </div>
+    <div class="field"><label class="label" for="word">每次敲击显示的文字</label><input id="word" type="text" maxlength="20" value="功德 +1" placeholder="例如：烦恼 -1、好运 +1"></div>
+    <div class="toggleline"><label for="vibrate">敲击时震动（设备支持时）</label><input id="vibrate" type="checkbox" checked></div>
+    <div class="actions"><button class="btn" id="reset">重置计数</button><button class="btn primary" id="save">保存设置</button></div>
+  </section>
+  </div>
+  <footer>作者 阳 ovo</footer>
+</main>
+<div class="toast" id="toast">已保存</div>
+<script>
+(function(){
+ const $=id=>document.getElementById(id);
+ const dayKey='woodfish-day', totalKey='woodfish-total', settingsKey='woodfish-settings';
+ const todayStr=new Date().toLocaleDateString('sv-SE');
+ let today=Number(localStorage.getItem(dayKey+'-count')||0);
+ if(localStorage.getItem(dayKey)!==todayStr){today=0;localStorage.setItem(dayKey,todayStr);localStorage.setItem(dayKey+'-count','0')}
+ let total=Number(localStorage.getItem(totalKey)||0);
+ let audioCtx=null,lastTap=0;
+ function render(){ $('today').textContent=today.toLocaleString();$('total').textContent=total.toLocaleString() }
+ function toast(msg){$('toast').textContent=msg;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),1500)}
+ function loadSettings(){try{const s=JSON.parse(localStorage.getItem(settingsKey)||'{}');if(s.sound)$('sound').value=s.sound;if(s.word!==undefined)$('word').value=s.word;if(s.vibrate!==undefined)$('vibrate').checked=s.vibrate}catch(e){}}
+ function saveSettings(){localStorage.setItem(settingsKey,JSON.stringify({sound:$('sound').value,word:$('word').value,vibrate:$('vibrate').checked}));toast('设置已保存')}
+ function play(){
+   const type=$('sound').value;if(type==='silent')return;
+   try{
+    const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+    if(!audioCtx)audioCtx=new AC();if(audioCtx.state==='suspended')audioCtx.resume();
+    const now=audioCtx.currentTime;
+    // Layered short wooden impact + hollow resonance, rather than a pure electronic beep.
+    const presets={
+      classic:{f:168,body:118,d:.22,level:.8,crack:.045},
+      deep:{f:112,body:76,d:.31,level:.88,crack:.025},
+      bell:{f:245,body:174,d:.16,level:.58,crack:.02},
+      soft:{f:150,body:105,d:.25,level:.43,crack:.012}
+    };
+    const p=presets[type]||presets.classic;
+    // Sharp, quiet broadband attack gives the initial tap a woody edge.
+    const len=Math.floor(audioCtx.sampleRate*.045);
+    const buffer=audioCtx.createBuffer(1,len,audioCtx.sampleRate);
+    const data=buffer.getChannelData(0);
+    for(let i=0;i<len;i++){const t=i/len;data[i]=(Math.random()*2-1)*Math.pow(1-t,5);}
+    const noise=audioCtx.createBufferSource();noise.buffer=buffer;
+    const filter=audioCtx.createBiquadFilter();filter.type='lowpass';filter.frequency.value=1400;
+    const ng=audioCtx.createGain();ng.gain.setValueAtTime(p.crack,now);ng.gain.exponentialRampToValueAtTime(.0001,now+.045);
+    noise.connect(filter);filter.connect(ng);ng.connect(audioCtx.destination);noise.start(now);noise.stop(now+.05);
+    // Resonant hollow wooden body, with a fast downward pitch sweep.
+    [p.f,p.body].forEach((freq,i)=>{
+      const osc=audioCtx.createOscillator(),gain=audioCtx.createGain(),filter2=audioCtx.createBiquadFilter();
+      osc.type='sine';osc.frequency.setValueAtTime(freq*1.08,now);osc.frequency.exponentialRampToValueAtTime(freq*.84,now+p.d);
+      filter2.type='lowpass';filter2.frequency.value=850;
+      const vol=p.level*(i===0?.30:.24);
+      gain.gain.setValueAtTime(.0001,now);gain.gain.linearRampToValueAtTime(vol,now+.008);gain.gain.exponentialRampToValueAtTime(.0001,now+p.d);
+      osc.connect(filter2);filter2.connect(gain);gain.connect(audioCtx.destination);osc.start(now);osc.stop(now+p.d+.02);
+    });
+   }catch(e){}
+ }
+ function hit(){
+  const now=Date.now();if(now-lastTap<55)return;lastTap=now;
+  today++;total++;localStorage.setItem(dayKey,todayStr);localStorage.setItem(dayKey+'-count',today);localStorage.setItem(totalKey,total);render();play();
+  const stage=$('stage'),wood=$('wood');stage.classList.remove('hit');wood.classList.remove('hit');void stage.offsetWidth;stage.classList.add('hit');wood.classList.add('hit');
+  setTimeout(()=>{stage.classList.remove('hit');wood.classList.remove('hit')},160);
+  const word=$('word').value.trim()||'功德 +1',el=document.createElement('div');el.className='float';el.textContent=word;stage.appendChild(el);setTimeout(()=>el.remove(),950);
+  if($('vibrate').checked&&navigator.vibrate)navigator.vibrate(20);
+ }
+ $('wood').addEventListener('click',e=>{e.preventDefault();hit()});
+ $('wood').addEventListener('contextmenu',e=>e.preventDefault());
+ $('wood').addEventListener('selectstart',e=>e.preventDefault());
+ $('openSettings').addEventListener('click',()=>{$('settingsOverlay').classList.add('open');$('settingsOverlay').setAttribute('aria-hidden','false')});
+ $('closeSettings').addEventListener('click',()=>{$('settingsOverlay').classList.remove('open');$('settingsOverlay').setAttribute('aria-hidden','true')});
+ $('settingsOverlay').addEventListener('click',e=>{if(e.target===$('settingsOverlay')){$('settingsOverlay').classList.remove('open');$('settingsOverlay').setAttribute('aria-hidden','true')}});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('settingsOverlay').classList.remove('open');$('settingsOverlay').setAttribute('aria-hidden','true')}});
+ $('stage').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();hit()}});
+ $('save').addEventListener('click',saveSettings);
+ $('sound').addEventListener('change',saveSettings);
+ $('word').addEventListener('change',saveSettings);
+ $('vibrate').addEventListener('change',saveSettings);
+ $('reset').addEventListener('click',()=>{if(confirm('确定重置今日功德和累计敲击次数吗？')){today=0;total=0;localStorage.setItem(dayKey+'-count','0');localStorage.setItem(totalKey,'0');render();toast('计数已重置')}});
+ loadSettings();render();
+})();
+</script>
+</body>
+</html>
